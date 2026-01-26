@@ -1,0 +1,7 @@
+{
+  "name": "SereneRead - Aesthetic Reading Timer",
+  "description": "A beautiful, minimalist reading timer designed for focus. Features ASMR white noise, customizable countdowns, and daily progress tracking with a modern, soft aesthetic.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
