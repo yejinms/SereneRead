@@ -51,6 +51,13 @@ const BookManager: React.FC<BookManagerProps> = ({
     }
   };
 
+  const handleEdit = (id: string, title: string) => {
+    if (title.trim()) {
+      onEdit(id, title.trim());
+    }
+    setEditingId(null);
+  };
+
   useEffect(() => {
     if (isAdding && scrollRef.current) {
       scrollRef.current.scrollTo({ left: scrollRef.current.scrollWidth, behavior: 'smooth' });
@@ -104,8 +111,13 @@ const BookManager: React.FC<BookManagerProps> = ({
                 className="bg-transparent border-none outline-none text-sm font-medium w-24 text-stone-700"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={() => { onEdit(book.id, editTitle); setEditingId(null); }}
-                onKeyDown={(e) => e.key === 'Enter' && setEditingId(null)}
+                onBlur={() => handleEdit(book.id, editTitle)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleEdit(book.id, editTitle);
+                  }
+                }}
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (

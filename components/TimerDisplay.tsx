@@ -17,7 +17,7 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({ secondsRemaining, isRunning
       <div className={`relative transition-all duration-1000 ${isRunning ? 'scale-105' : 'scale-100'}`}>
         <div className="font-serif text-[130px] md:text-[160px] leading-[0.9] tracking-[-0.05em] text-stone-800 flex tabular-nums items-center">
           <span className="inline-block min-w-[1.2ch] text-center">{formatTime(minutes)}</span>
-          <span className="w-4"></span> {/* Precise spacing instead of a space class */}
+          <span className="text-[60px] md:text-[80px] text-stone-600/40 mx-1 leading-none">:</span>
           <span className="inline-block min-w-[1.2ch] text-center">{formatTime(seconds)}</span>
         </div>
         
