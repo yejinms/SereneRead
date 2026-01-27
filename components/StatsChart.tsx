@@ -89,14 +89,13 @@ const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
       const totalSecs = Object.values(dayData).reduce((sum, val) => sum + (val as number), 0);
       const totalMins = Math.round(totalSecs / 60);
       
-      // Determine background color based on reading intensity
+      // Determine background color based on reading intensity - rose-300 최대치, 5단계
       let intensityClass = 'bg-stone-100';
       if (totalMins > 0) {
-        if (totalMins < 15) intensityClass = 'bg-rose-100';
-        else if (totalMins < 30) intensityClass = 'bg-rose-200';
-        else if (totalMins < 60) intensityClass = 'bg-rose-300';
-        else if (totalMins < 120) intensityClass = 'bg-rose-400';
-        else intensityClass = 'bg-rose-500';
+        if (totalMins < 10) intensityClass = 'bg-rose-50';
+        else if (totalMins < 25) intensityClass = 'bg-rose-100';
+        else if (totalMins < 45) intensityClass = 'bg-rose-200';
+        else intensityClass = 'bg-rose-300';
       }
 
       const isSelected = selectedDay?.day === day;
@@ -144,9 +143,9 @@ const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
   };
 
   return (
-    <div className="w-full space-y-10 relative">
+    <div className="w-full space-y-4 md:space-y-10 relative">
       {/* Weekly Bar Chart Section */}
-      <div className="w-full relative flex justify-center items-center" style={{ height: '220px', minWidth: '0' }}>
+      <div className="w-full relative flex justify-center items-center" style={{ height: '180px', minWidth: '0' }}>
         {isReady ? (
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <BarChart 
@@ -212,8 +211,8 @@ const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
       </div>
 
       {/* Reading Grass Section */}
-      <div className="pt-8 border-t border-stone-100">
-        <div className="flex items-center justify-between mb-6">
+      <div className="pt-4 md:pt-8 border-t border-stone-100">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <div className="flex flex-col">
             <h3 className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-400">Monthly Intensity</h3>
             <div className="h-4 mt-1">
@@ -232,7 +231,7 @@ const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
             <button onClick={() => changeMonth(1)} className="p-2 bg-stone-50 rounded-full text-stone-400 active:scale-75 transition-transform"><ChevronRight size={16} /></button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-1.5">{renderGrass()}</div>
+        <div className="grid grid-cols-7 gap-0.5 md:gap-1.5">{renderGrass()}</div>
       </div>
       
       <style>{`

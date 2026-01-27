@@ -36,14 +36,87 @@ const App: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const savedStats = localStorage.getItem(STORAGE_KEY_STATS);
-    const savedBooks = localStorage.getItem(STORAGE_KEY_BOOKS);
-    if (savedBooks) {
-      const parsedBooks = JSON.parse(savedBooks);
-      setBooks(parsedBooks);
-      if (parsedBooks.length > 0) setSelectedBookId(parsedBooks[0].id);
+    // 이미지 캡처용 목업 데이터 설정
+    const mockBooks: Book[] = [
+      { id: 'book1', title: '돈의 방정식', color: '#fbcfe8' },
+      { id: 'book2', title: '스토너', color: '#ddd6fe' },
+      { id: 'book3', title: '그릿', color: '#d1fae5' },
+    ];
+
+    // 최근 한 달간 목업 통계 데이터 생성 - 5단계 색상에 맞춰 다양하게 분포
+    const mockStats: DailyStats = {};
+    const today = new Date();
+    
+    // 최근 30일간 데이터 생성
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // 각 날짜별로 목표 합산 시간을 5단계에 골고루 분포
+      // 0분(stone-100), 1-9분(rose-50), 10-24분(rose-100), 25-44분(rose-200), 45분+(rose-300)
+      const dayPattern = i % 5;
+      let targetTotalMins = 0;
+      
+      if (dayPattern === 0) {
+        // 0분 - 읽지 않은 날
+        continue;
+      } else if (dayPattern === 1) {
+        // 1-9분 범위
+        targetTotalMins = Math.floor(Math.random() * 9 + 1);
+      } else if (dayPattern === 2) {
+        // 10-24분 범위
+        targetTotalMins = Math.floor(Math.random() * 15 + 10);
+      } else if (dayPattern === 3) {
+        // 25-44분 범위
+        targetTotalMins = Math.floor(Math.random() * 20 + 25);
+      } else {
+        // 45분 이상 범위
+        targetTotalMins = Math.floor(Math.random() * 40 + 45);
+      }
+      
+      const targetTotalSecs = targetTotalMins * 60;
+      const dayData: { [bookId: string]: number } = {};
+      
+      // 목표 시간을 2-3권에 골고루 분배
+      const numBooks = Math.floor(Math.random() * 2) + 2; // 2-3권
+      const bookIds = ['book1', 'book2', 'book3'];
+      
+      // 책 순서를 랜덤하게 섞기
+      const shuffledBooks = [...bookIds].sort(() => Math.random() - 0.5);
+      const selectedBooks = shuffledBooks.slice(0, numBooks);
+      
+      let remainingSecs = targetTotalSecs;
+      
+      // 각 책에 균등하게 분배 (약간의 랜덤성 추가)
+      for (let j = 0; j < selectedBooks.length; j++) {
+        const bookId = selectedBooks[j];
+        
+        if (j === selectedBooks.length - 1) {
+          // 마지막 책은 남은 시간 모두 할당
+          dayData[bookId] = remainingSecs;
+        } else {
+          // 각 책에 30-50% 비율로 분배
+          const ratio = Math.random() * 0.2 + 0.3; // 0.3 ~ 0.5
+          const bookSecs = Math.floor(remainingSecs * ratio);
+          dayData[bookId] = bookSecs;
+          remainingSecs -= bookSecs;
+        }
+      }
+      
+      if (Object.keys(dayData).length > 0) {
+        mockStats[dateStr] = dayData;
+      }
     }
-    if (savedStats) setStats(JSON.parse(savedStats));
+
+    // 목업 데이터 설정
+    setBooks(mockBooks);
+    setSelectedBookId(mockBooks[0].id);
+    setStats(mockStats);
+    
+    // localStorage에도 저장
+    localStorage.setItem(STORAGE_KEY_BOOKS, JSON.stringify(mockBooks));
+    localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(mockStats));
   }, []);
 
   useEffect(() => {
@@ -118,26 +191,28 @@ const App: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex flex-col space-y-4 animate-in fade-in duration-700">
-        <div className="flex justify-between items-center px-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-stone-800 rounded-full flex items-center justify-center">
-              <Moon size={16} className="text-stone-50" />
+      <div className="flex flex-col animate-in fade-in duration-700">
+        <div className="sticky top-0 z-50 pb-4 pt-2 mb-4">
+          <div className="flex justify-between items-center px-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-stone-800 rounded-full flex items-center justify-center">
+                <Moon size={16} className="text-stone-50" />
+              </div>
+              <h1 className="font-serif text-2xl tracking-tight text-stone-800 italic">SereneRead</h1>
             </div>
-            <h1 className="font-serif text-2xl tracking-tight text-stone-800 italic">SereneRead</h1>
+            <button 
+              onClick={() => { triggerHaptic(); setShowStats(!showStats); }}
+              className={`p-2.5 rounded-full transition-all duration-300 active:scale-90 ${
+                showStats ? 'bg-stone-800 text-stone-50 rotate-90 shadow-lg' : 'bg-white shadow-sm'
+              }`}
+            >
+              {showStats ? <Settings2 size={20} /> : <BarChart3 size={20} />}
+            </button>
           </div>
-          <button 
-            onClick={() => { triggerHaptic(); setShowStats(!showStats); }}
-            className={`p-2.5 rounded-full transition-all duration-300 active:scale-90 ${
-              showStats ? 'bg-stone-800 text-stone-50 rotate-90 shadow-lg' : 'bg-white shadow-sm'
-            }`}
-          >
-            {showStats ? <Settings2 size={20} /> : <BarChart3 size={20} />}
-          </button>
         </div>
 
         {showStats ? (
-          <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-[40px] p-6 shadow-sm overflow-y-auto no-scrollbar max-h-[85vh]">
+          <div className="bg-white/40 backdrop-blur-xl border border-white/50 rounded-[40px] p-6 shadow-sm overflow-y-auto no-scrollbar max-h-[calc(85vh-100px)]">
              <div className="flex justify-between items-end mb-8 px-2">
                 <div>
                   <h2 className="text-stone-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Weekly Insight</h2>
@@ -157,7 +232,7 @@ const App: React.FC = () => {
              </button>
           </div>
         ) : (
-          <div className="space-y-0 flex flex-col items-center">
+          <div className="space-y-0 flex flex-col items-center pt-0">
             <div className="w-full mb-1">
               <BookManager 
                 books={books}
