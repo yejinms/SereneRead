@@ -151,8 +151,8 @@ export default function App() {
   }, [stats]);
 
   const insets = useSafeAreaInsets();
-  const headerPaddingTop = Math.max(insets.top, 12);
-  const contentPaddingTop = 12;
+  const headerPaddingTop = Math.max(insets.top, 8);
+  const contentPaddingTop = 16;
 
   if (!fontsLoaded) return null;
 
@@ -334,9 +334,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 0,
+    paddingVertical: 0,
     marginBottom: 0,
+    minHeight: 52,
+    height: 52,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoIcon: {
