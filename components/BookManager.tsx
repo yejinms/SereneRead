@@ -1,8 +1,16 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Edit3, Check, X } from 'lucide-react';
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Book } from '../types';
-import { triggerHaptic } from '../App';
+import { colors } from '../theme';
+import { triggerHaptic } from '../hooks/useHaptic';
 
 interface BookManagerProps {
   books: Book[];
@@ -13,26 +21,25 @@ interface BookManagerProps {
   onEdit: (id: string, title: string) => void;
 }
 
-const BookManager: React.FC<BookManagerProps> = ({
+export default function BookManager({
   books,
   selectedBookId,
   onSelect,
   onAdd,
   onDelete,
   onEdit,
-}) => {
+}: BookManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [manageId, setManageId] = useState<string | null>(null);
-  
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const startLongPress = (id: string) => {
     longPressTimer.current = setTimeout(() => {
-      triggerHaptic(30);
+      triggerHaptic('medium');
       setManageId(id);
     }, 600);
   };
@@ -40,6 +47,7 @@ const BookManager: React.FC<BookManagerProps> = ({
   const endLongPress = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
 
@@ -52,118 +60,222 @@ const BookManager: React.FC<BookManagerProps> = ({
   };
 
   const handleEdit = (id: string, title: string) => {
-    if (title.trim()) {
-      onEdit(id, title.trim());
-    }
+    if (title.trim()) onEdit(id, title.trim());
     setEditingId(null);
   };
 
   useEffect(() => {
     if (isAdding && scrollRef.current) {
-      scrollRef.current.scrollTo({ left: scrollRef.current.scrollWidth, behavior: 'smooth' });
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [isAdding]);
 
   return (
-    <div className="w-full overflow-hidden" onClick={() => setManageId(null)}>
-      <div className="flex items-center justify-between px-4 mb-1">
-        <h3 className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-400/70">Now Reading</h3>
-        <button 
-          onClick={(e) => { e.stopPropagation(); triggerHaptic(); setIsAdding(!isAdding); }}
-          className={`p-1 rounded-full transition-all active:scale-75 ${
-            isAdding ? 'bg-stone-800 text-white rotate-45' : 'bg-white text-stone-300 shadow-sm border border-stone-100'
-          }`}
+    <Pressable style={styles.container} onPress={() => setManageId(null)}>
+      <View style={styles.header}>
+        <Text style={styles.label}>Now Reading</Text>
+        <Pressable
+          onPress={() => {
+            triggerHaptic('light');
+            setIsAdding(!isAdding);
+          }}
+          style={[styles.addBtn, isAdding && styles.addBtnActive]}
         >
-          <Plus size={12} />
-        </button>
-      </div>
-
-      <div ref={scrollRef} className="flex items-center space-x-2.5 px-4 py-2 overflow-x-auto no-scrollbar flex-nowrap min-h-[58px] w-full">
-        {/* General Option */}
-        <div 
-          className={`flex-shrink-0 flex items-center h-10 px-4 rounded-[18px] transition-all duration-300 border cursor-pointer active:scale-95 ${
-            selectedBookId === null ? 'bg-white border-stone-200 shadow-md scale-105 z-10' : 'bg-stone-50/40 border-stone-100/50 text-stone-400'
-          }`}
-          onClick={(e) => { e.stopPropagation(); onSelect(null); }}
+          <Ionicons name="add" size={16} color={isAdding ? colors.white : colors.stone[400]} />
+        </Pressable>
+      </View>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
+      >
+        <Pressable
+          onPress={() => onSelect(null)}
+          style={[styles.chip, selectedBookId === null && styles.chipSelected]}
         >
-          <div className={`w-2 h-2 rounded-full mr-2.5 bg-stone-300 ${selectedBookId === null ? 'scale-125' : 'scale-100'}`} />
-          <span className={`text-sm font-medium ${selectedBookId === null ? 'text-stone-800' : 'text-stone-500'}`}>General</span>
-        </div>
-
+          <View style={[styles.dot, selectedBookId === null && styles.dotSelected]} />
+          <Text style={[styles.chipText, selectedBookId === null && styles.chipTextSelected]}>
+            General
+          </Text>
+        </Pressable>
         {books.map((book) => (
-          <div 
+          <Pressable
             key={book.id}
-            className={`relative flex-shrink-0 flex items-center h-10 px-4 rounded-[18px] transition-all duration-300 border cursor-pointer active:scale-95 ${
-              selectedBookId === book.id ? 'bg-white border-stone-200 shadow-md scale-105 z-10' : 'bg-stone-50/40 border-stone-100/50 text-stone-400'
-            }`}
-            onTouchStart={() => startLongPress(book.id)}
-            onTouchEnd={endLongPress}
-            onMouseDown={() => startLongPress(book.id)}
-            onMouseUp={endLongPress}
-            onMouseLeave={endLongPress}
-            onClick={(e) => { e.stopPropagation(); if (!manageId) onSelect(book.id); }}
+            onPress={() => {
+              if (!manageId) onSelect(book.id);
+            }}
+            onPressIn={() => startLongPress(book.id)}
+            onPressOut={endLongPress}
+            style={[styles.chip, selectedBookId === book.id && styles.chipSelected]}
           >
-            <div className={`w-2 h-2 rounded-full mr-2.5 ${selectedBookId === book.id ? 'scale-125' : 'scale-100'}`} style={{ backgroundColor: book.color }} />
-            
+            <View
+              style={[
+                styles.dot,
+                selectedBookId === book.id && styles.dotSelected,
+                { backgroundColor: book.color },
+              ]}
+            />
             {editingId === book.id ? (
-              <input 
+              <TextInput
                 autoFocus
-                className="bg-transparent border-none outline-none text-sm font-medium w-24 text-stone-700"
                 value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
+                onChangeText={setEditTitle}
                 onBlur={() => handleEdit(book.id, editTitle)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleEdit(book.id, editTitle);
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
+                onSubmitEditing={() => handleEdit(book.id, editTitle)}
+                style={styles.input}
+                placeholderTextColor={colors.stone[500]}
               />
             ) : (
-              <span className={`text-sm font-medium truncate max-w-[110px] ${selectedBookId === book.id ? 'text-stone-800' : 'text-stone-500'}`}>
+              <Text
+                style={[styles.chipText, selectedBookId === book.id && styles.chipTextSelected]}
+                numberOfLines={1}
+              >
                 {book.title}
-              </span>
+              </Text>
             )}
-
-            {/* 롱 프레스 시 노출되는 액션 버튼 (호버 UI 유지) */}
             {manageId === book.id && (
-              <div className="absolute -top-3 -right-2 flex items-center space-x-1 animate-in zoom-in-90 fade-in duration-200 z-50">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); triggerHaptic(); setEditTitle(book.title); setEditingId(book.id); setManageId(null); }}
-                  className="p-1.5 bg-white shadow-xl border border-stone-100 rounded-full text-stone-400 active:scale-75 active:text-stone-600 transition-all"
+              <View style={styles.actions}>
+                <Pressable
+                  onPress={() => {
+                    triggerHaptic('light');
+                    setEditTitle(book.title);
+                    setEditingId(book.id);
+                    setManageId(null);
+                  }}
+                  style={styles.actionBtn}
                 >
-                  <Edit3 size={12} />
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); triggerHaptic(40); onDelete(book.id); setManageId(null); }}
-                  className="p-1.5 bg-white shadow-xl border border-stone-100 rounded-full text-rose-300 active:scale-75 active:text-rose-500 transition-all"
+                  <Ionicons name="pencil" size={14} color={colors.stone[500]} />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    triggerHaptic('heavy');
+                    onDelete(book.id);
+                    setManageId(null);
+                  }}
+                  style={styles.actionBtn}
                 >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+                  <Ionicons name="trash-outline" size={14} color={colors.rose[400]} />
+                </Pressable>
+              </View>
             )}
-          </div>
+          </Pressable>
         ))}
-
         {isAdding && (
-          <div className="flex-shrink-0 flex items-center h-10 px-4 rounded-[18px] bg-white border border-stone-200 shadow-md animate-in slide-in-from-left-4 fade-in">
-            <input 
+          <View style={[styles.chip, styles.chipAdd]}>
+            <TextInput
               autoFocus
-              className="bg-transparent border-none outline-none text-sm font-medium w-28 text-stone-700"
               placeholder="Title..."
+              placeholderTextColor={colors.stone[400]}
               value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              onChangeText={setNewTitle}
+              onSubmitEditing={handleAdd}
+              style={styles.input}
             />
-            <button onClick={handleAdd} className="ml-2 text-emerald-500 active:scale-75">
-              <Check size={16} />
-            </button>
-          </div>
+            <Pressable onPress={handleAdd} hitSlop={8}>
+              <Ionicons name="checkmark" size={18} color={colors.emerald[400]} />
+            </Pressable>
+          </View>
         )}
-      </div>
-    </div>
+      </ScrollView>
+    </Pressable>
   );
-};
+}
 
-export default BookManager;
+const styles = StyleSheet.create({
+  container: { width: '100%', overflow: 'hidden' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 4,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+    color: colors.stone[400],
+    opacity: 0.7,
+  },
+  addBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.stone[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addBtnActive: {
+    backgroundColor: colors.stone[800],
+    borderColor: colors.stone[800],
+  },
+  scroll: { width: '100%', minHeight: 58 },
+  scrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 10,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: colors.stone[50],
+    borderWidth: 1,
+    borderColor: colors.stone[100],
+    marginRight: 10,
+  },
+  chipSelected: {
+    backgroundColor: colors.white,
+    borderColor: colors.stone[200],
+    transform: [{ scale: 1.05 }],
+    zIndex: 10,
+  },
+  chipAdd: {
+    backgroundColor: colors.white,
+    borderColor: colors.stone[200],
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.stone[300],
+    marginRight: 10,
+  },
+  dotSelected: { transform: [{ scale: 1.25 }] },
+  chipText: { fontSize: 14, fontWeight: '500', color: colors.stone[500], maxWidth: 110 },
+  chipTextSelected: { color: colors.stone[800] },
+  input: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.stone[700],
+    padding: 0,
+    minWidth: 80,
+    maxWidth: 120,
+  },
+  actions: {
+    position: 'absolute',
+    top: -12,
+    right: -8,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 50,
+  },
+  actionBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.stone[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

@@ -1,29 +1,33 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DailyStats, Book } from '../types';
-import { triggerHaptic } from '../App';
+import { colors } from '../theme';
+import { triggerHaptic } from '../hooks/useHaptic';
+import { UNTRACKED_ID } from '../constants';
+
+const CHART_HEIGHT = 180;
+const { width: screenWidth } = Dimensions.get('window');
+const chartWidth = Math.min(screenWidth - 32 - 48, 400);
+const barWidth = (chartWidth - 80) / 7;
+const barMaxHeight = 140;
 
 interface StatsChartProps {
   stats: DailyStats;
   books: Book[];
 }
 
-const UNTRACKED_ID = 'untracked_session';
-const ACCENT_RGB = '225, 29, 72';
-
-const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
+export default function StatsChart({ stats, books }: StatsChartProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<{ day: number, mins: number, dateStr: string } | null>(null);
-  const [activeData, setActiveData] = useState<{ date: string, details: any[] } | null>(null);
-  const [isReady, setIsReady] = useState(false);
-
-  // 마운트 직후 레이아웃 에러 방지를 위한 딜레이
-  useEffect(() => {
-    const timer = setTimeout(() => setIsReady(true), 200);
-    return () => clearTimeout(timer);
-  }, []);
+  const [selectedDay, setSelectedDay] = useState<{
+    day: number;
+    mins: number;
+    dateStr: string;
+  } | null>(null);
+  const [tooltipDay, setTooltipDay] = useState<{
+    fullDate: string;
+    details: { title: string; mins: number; color: string }[];
+  } | null>(null);
 
   const chartData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -31,224 +35,294 @@ const StatsChart: React.FC<StatsChartProps> = ({ stats, books }) => {
       d.setDate(d.getDate() - (6 - i));
       return d.toISOString().split('T')[0];
     });
-
-    return last7Days.map(date => {
+    return last7Days.map((date) => {
       const dayData = stats[date] || {};
-      const item: any = { 
-        date: date.split('-').slice(1).join('/'), 
-        fullDate: date 
-      };
-      const details: any[] = [];
-      
+      const details: { title: string; mins: number; color: string }[] = [];
       const untrackedSecs = dayData[UNTRACKED_ID] || 0;
       const untrackedMins = Number((untrackedSecs / 60).toFixed(1));
-      item[UNTRACKED_ID] = untrackedMins;
-      if (untrackedMins > 0) {
-        details.push({ title: 'General', mins: untrackedMins, color: '#d6d3d1' });
-      }
-
-      books.forEach(book => {
-        const secs = dayData[book.id] || 0;
+      if (untrackedMins > 0) details.push({ title: 'General', mins: untrackedMins, color: '#d6d3d1' });
+      books.forEach((b) => {
+        const secs = dayData[b.id] || 0;
         const mins = Number((secs / 60).toFixed(1));
-        item[book.id] = mins;
-        if (mins > 0) {
-          details.push({ title: book.title, mins, color: book.color });
-        }
+        if (mins > 0) details.push({ title: b.title, mins, color: b.color });
       });
-      
-      item.details = details;
-      return item;
+      const totalMins = details.reduce((s, d) => s + d.mins, 0);
+      return {
+        date: date.split('-').slice(1).join('/'),
+        fullDate: date,
+        details,
+        totalMins,
+        segments: details,
+      };
     });
   }, [stats, books]);
 
-  const changeMonth = (offset: number) => {
-    triggerHaptic();
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + offset);
-    setCurrentDate(newDate);
+  const maxMins = Math.max(1, ...chartData.map((d) => d.totalMins));
+
+  const changeMonth = (delta: number) => {
+    triggerHaptic('light');
+    const d = new Date(currentDate);
+    d.setMonth(d.getMonth() + delta);
+    setCurrentDate(d);
     setSelectedDay(null);
   };
 
-  // Fix: Implemented renderGrass function to handle the monthly heatmap grid
-  const renderGrass = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-    const squares = [];
-    
-    // Add empty squares for leading days of the week to align the grid
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      squares.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayData = stats[dateStr] || {};
-      const totalSecs = Object.values(dayData).reduce((sum, val) => sum + (val as number), 0);
-      const totalMins = Math.round(totalSecs / 60);
-      
-      // Determine background color based on reading intensity - rose-300 최대치, 5단계
-      let intensityClass = 'bg-stone-100';
-      if (totalMins > 0) {
-        if (totalMins < 10) intensityClass = 'bg-rose-50';
-        else if (totalMins < 25) intensityClass = 'bg-rose-100';
-        else if (totalMins < 45) intensityClass = 'bg-rose-200';
-        else intensityClass = 'bg-rose-300';
-      }
-
-      const isSelected = selectedDay?.day === day;
-
-      squares.push(
-        <div
-          key={day}
-          onClick={() => {
-            triggerHaptic(5);
-            setSelectedDay({ day, mins: totalMins, dateStr });
-          }}
-          className={`w-full aspect-square rounded-[4px] transition-all cursor-pointer ${intensityClass} ${
-            isSelected ? 'ring-2 ring-stone-800 ring-offset-2 scale-90' : 'hover:scale-110 active:scale-95'
-          }`}
-        />
-      );
-    }
-
-    return squares;
-  };
-
-  // 커스텀 툴팁: 막대 근처에 뜨도록 설정
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white/95 backdrop-blur-md border border-stone-100 p-4 rounded-2xl shadow-xl animate-in zoom-in-95 fade-in duration-200 pointer-events-none min-w-[140px] z-50">
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3 border-b border-stone-50 pb-2">{data.fullDate}</p>
-          <div className="space-y-2">
-            {data.details.map((d: any, i: number) => (
-              <div key={i} className="flex justify-between items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: d.color }}></div>
-                  <span className="text-[11px] font-medium text-stone-600 truncate max-w-[80px]">{d.title}</span>
-                </div>
-                <span className="text-[11px] font-bold text-stone-900">{Math.round(d.mins)}m</span>
-              </div>
-            ))}
-            {data.details.length === 0 && <p className="text-[11px] text-stone-300 italic">No activity</p>}
-          </div>
-        </div>
-      );
-    }
-    return null;
+  const intensityBg = (totalMins: number) => {
+    if (totalMins <= 0) return colors.stone[100];
+    if (totalMins < 10) return colors.rose[50];
+    if (totalMins < 25) return colors.rose[100];
+    if (totalMins < 45) return colors.rose[200];
+    return colors.rose[300];
   };
 
   return (
-    <div className="w-full space-y-4 md:space-y-10 relative">
-      {/* Weekly Bar Chart Section */}
-      <div className="w-full relative flex justify-center items-center" style={{ height: '180px', minWidth: '0' }}>
-        {isReady ? (
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <BarChart 
-              data={chartData} 
-              margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-              barCategoryGap="20%"
-              onClick={(state) => {
-                if (state && state.activePayload) triggerHaptic(20);
+    <View style={styles.container}>
+      {/* Weekly stacked bars */}
+      <View style={styles.chartWrap}>
+        <View style={styles.barRow}>
+          {chartData.map((day, i) => (
+            <Pressable
+              key={day.fullDate}
+              onPress={() => {
+                triggerHaptic('medium');
+                setTooltipDay(
+                  tooltipDay?.fullDate === day.fullDate
+                    ? null
+                    : { fullDate: day.fullDate, details: day.details }
+                );
               }}
-              style={{ outline: 'none' }}
+              style={styles.barCol}
             >
-              <defs>
-                <filter id="shadow">
-                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.1"/>
-                </filter>
-              </defs>
-              <XAxis 
-                dataKey="date" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fill: '#a8a29e', fontWeight: 600 }} 
-                dy={12}
-              />
-              {/* Y축 숨김 */}
-              <YAxis hide={true} domain={[0, 'auto']} />
-              
-              {/* 툴팁 설정: 파란 테두리 방지를 위해 cursor fill 투명화 및 포커스 해제 */}
-              <Tooltip 
-                content={<CustomTooltip />} 
-                cursor={{ fill: 'rgba(0,0,0,0.03)', radius: 8 }}
-                trigger="click"
-                wrapperStyle={{ outline: 'none', pointerEvents: 'none' }}
-              />
-              
-              <Bar 
-                dataKey={UNTRACKED_ID} 
-                stackId="a" 
-                fill="#d6d3d1" 
-                radius={[6, 6, 0, 0]} 
-                isAnimationActive={false}
-                barSize={32}
-                style={{ outline: 'none', cursor: 'pointer' }}
-              />
-              {books.map((book) => (
-                <Bar 
-                  key={book.id} 
-                  dataKey={book.id} 
-                  stackId="a" 
-                  fill={book.color} 
-                  radius={[6, 6, 0, 0]} 
-                  isAnimationActive={false}
-                  barSize={32}
-                  style={{ outline: 'none', cursor: 'pointer' }}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex items-center justify-center w-full h-full bg-stone-50/50 rounded-3xl animate-pulse">
-            <div className="w-5 h-5 border-2 border-stone-200 border-t-stone-400 rounded-full animate-spin"></div>
-          </div>
+              <View style={styles.barStack}>
+                {day.segments.length === 0 ? (
+                  <View style={[styles.barSegment, { height: 4, backgroundColor: colors.stone[100] }]} />
+                ) : (
+                  [...day.segments].reverse().map((seg, j) => (
+                    <View
+                      key={j}
+                      style={[
+                        styles.barSegment,
+                        {
+                          height: Math.max(4, (seg.mins / maxMins) * barMaxHeight),
+                          backgroundColor: seg.color,
+                        },
+                      ]}
+                    />
+                  ))
+                )}
+              </View>
+            </Pressable>
+          ))}
+        </View>
+        <View style={styles.xAxis}>
+          {chartData.map((day) => (
+            <Text key={day.fullDate} style={styles.xLabel}>
+              {day.date}
+            </Text>
+          ))}
+        </View>
+        {tooltipDay && (
+          <View style={styles.tooltip}>
+            <Text style={styles.tooltipTitle}>{tooltipDay.fullDate}</Text>
+            {tooltipDay.details.map((d, i) => (
+              <View key={i} style={styles.tooltipRow}>
+                <View style={[styles.tooltipDot, { backgroundColor: d.color }]} />
+                <Text style={styles.tooltipName} numberOfLines={1}>
+                  {d.title}
+                </Text>
+                <Text style={styles.tooltipMins}>{Math.round(d.mins)}m</Text>
+              </View>
+            ))}
+            {tooltipDay.details.length === 0 && (
+              <Text style={styles.tooltipEmpty}>No activity</Text>
+            )}
+          </View>
         )}
-      </div>
+      </View>
 
-      {/* Reading Grass Section */}
-      <div className="pt-4 md:pt-8 border-t border-stone-100">
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <div className="flex flex-col">
-            <h3 className="text-[10px] uppercase tracking-[0.25em] font-bold text-stone-400">Monthly Intensity</h3>
-            <div className="h-4 mt-1">
-              {selectedDay && (
-                <p className="text-[11px] font-semibold text-stone-600">
-                  {currentDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} {selectedDay.day} • <span className="text-rose-600">{selectedDay.mins}m</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={() => changeMonth(-1)} className="p-2 bg-stone-50 rounded-full text-stone-400 active:scale-75 transition-transform"><ChevronLeft size={16} /></button>
-            <span className="text-[11px] font-bold text-stone-700 min-w-[80px] text-center uppercase tracking-widest">
+      {/* Monthly intensity grid */}
+      <View style={styles.grassSection}>
+        <View style={styles.grassHeader}>
+          <View>
+            <Text style={styles.grassLabel}>Monthly Intensity</Text>
+            {selectedDay && (
+              <Text style={styles.grassSelected}>
+                {currentDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}{' '}
+                {selectedDay.day} • <Text style={{ color: colors.rose[600] }}>{selectedDay.mins}m</Text>
+              </Text>
+            )}
+          </View>
+          <View style={styles.monthNav}>
+            <Pressable onPress={() => changeMonth(-1)} style={styles.navBtn}>
+              <Ionicons name="chevron-back" size={18} color={colors.stone[400]} />
+            </Pressable>
+            <Text style={styles.monthTitle}>
               {currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-            </span>
-            <button onClick={() => changeMonth(1)} className="p-2 bg-stone-50 rounded-full text-stone-400 active:scale-75 transition-transform"><ChevronRight size={16} /></button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-0.5 md:gap-1.5">{renderGrass()}</div>
-      </div>
-      
-      <style>{`
-        /* Recharts 내부의 포커스 링(파란 테두리) 강제 제거 */
-        .recharts-wrapper, .recharts-surface {
-          outline: none !important;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .recharts-bar-rectangle {
-          transition: opacity 0.2s ease;
-        }
-        .recharts-bar-rectangle:active {
-          opacity: 0.8;
-        }
-      `}</style>
-    </div>
+            </Text>
+            <Pressable onPress={() => changeMonth(1)} style={styles.navBtn}>
+              <Ionicons name="chevron-forward" size={18} color={colors.stone[400]} />
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.grid}>
+          {Array.from({ length: firstDay }, (_, i) => (
+            <View key={`e-${i}`} style={styles.cell} />
+          ))}
+          {Array.from({ length: daysInMonth }, (_, i) => {
+            const day = i + 1;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayData = stats[dateStr] || {};
+            const totalSecs = Object.values(dayData).reduce((s, v) => s + (v as number), 0);
+            const totalMins = Math.round(totalSecs / 60);
+            const isSelected = selectedDay?.day === day;
+            return (
+              <Pressable
+                key={day}
+                onPress={() => {
+                  triggerHaptic('light');
+                  setSelectedDay({ day, mins: totalMins, dateStr });
+                }}
+                style={[
+                  styles.cell,
+                  { backgroundColor: intensityBg(totalMins) },
+                  isSelected && styles.cellSelected,
+                ]}
+              />
+            );
+          })}
+        </View>
+      </View>
+    </View>
   );
-};
+}
 
-export default StatsChart;
+const styles = StyleSheet.create({
+  container: { width: '100%' },
+  chartWrap: {
+    height: CHART_HEIGHT,
+    width: '100%',
+    paddingHorizontal: 24,
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: barMaxHeight + 8,
+    paddingHorizontal: 8,
+  },
+  barCol: { flex: 1, alignItems: 'center', marginHorizontal: 2 },
+  barStack: {
+    width: barWidth - 4,
+    borderRadius: 6,
+    overflow: 'hidden',
+    flexDirection: 'column-reverse',
+    minHeight: 4,
+  },
+  barSegment: {
+    width: '100%',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  xAxis: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  xLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.stone[400],
+  },
+  tooltip: {
+    position: 'absolute',
+    top: 24,
+    left: '50%',
+    marginLeft: -80,
+    minWidth: 160,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.stone[100],
+    padding: 16,
+    zIndex: 50,
+  },
+  tooltipTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.stone[400],
+    letterSpacing: 1,
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.stone[100],
+  },
+  tooltipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  tooltipDot: { width: 6, height: 6, borderRadius: 3 },
+  tooltipName: { flex: 1, fontSize: 11, fontWeight: '500', color: colors.stone[600], maxWidth: 90 },
+  tooltipMins: { fontSize: 11, fontWeight: '700', color: colors.stone[900] },
+  tooltipEmpty: { fontSize: 11, color: colors.stone[400], fontStyle: 'italic' },
+  grassSection: {
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.stone[100],
+  },
+  grassHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  grassLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+    color: colors.stone[400],
+  },
+  grassSelected: { fontSize: 11, fontWeight: '600', color: colors.stone[600], marginTop: 4 },
+  monthNav: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.stone[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.stone[700],
+    minWidth: 80,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  cell: {
+    width: '13%',
+    aspectRatio: 1,
+    borderRadius: 4,
+    maxWidth: 44,
+  },
+  cellSelected: {
+    borderWidth: 2,
+    borderColor: colors.stone[800],
+  },
+});

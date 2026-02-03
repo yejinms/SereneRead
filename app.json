@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "SereneRead",
+    "slug": "sereneread",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sereneread.app"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-av"
+    ],
+    "scheme": "sereneread"
+  }
+}

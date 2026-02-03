@@ -1,33 +1,71 @@
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { colors } from '../theme';
 
-import React from 'react';
+const { height: screenHeight } = Dimensions.get('window');
+const fontSize = screenHeight < 700 ? 96 : 108;
+const colonSize = Math.round(fontSize * 0.48);
 
 interface TimerDisplayProps {
   secondsRemaining: number;
   isRunning: boolean;
 }
 
-const TimerDisplay: React.FC<TimerDisplayProps> = ({ secondsRemaining, isRunning }) => {
+export default function TimerDisplay({ secondsRemaining, isRunning }: TimerDisplayProps) {
   const minutes = Math.floor(secondsRemaining / 60);
-  const seconds = secondsRemaining % 60;
+  const secs = secondsRemaining % 60;
+  const format = (n: number) => String(n).padStart(2, '0');
 
-  const formatTime = (val: number) => val.toString().padStart(2, '0');
+  const scale = React.useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.timing(scale, {
+      toValue: isRunning ? 1.05 : 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isRunning]);
 
   return (
-    <div className="flex flex-col items-center justify-center py-4">
-      <div className={`relative transition-all duration-1000 ${isRunning ? 'scale-105' : 'scale-100'}`}>
-        <div className="font-serif text-[130px] md:text-[160px] leading-[0.9] tracking-[-0.05em] text-stone-800 flex tabular-nums items-center">
-          <span className="inline-block min-w-[1.2ch] text-center">{formatTime(minutes)}</span>
-          <span className="text-[60px] md:text-[80px] text-stone-600/40 mx-1 leading-none">:</span>
-          <span className="inline-block min-w-[1.2ch] text-center">{formatTime(seconds)}</span>
-        </div>
-        
-        {/* Subtle glow effect when running */}
-        {isRunning && (
-          <div className="absolute inset-0 bg-stone-400/5 blur-[80px] -z-10 rounded-full scale-150 animate-pulse"></div>
-        )}
-      </div>
-    </div>
+    <View style={styles.wrap}>
+      <Animated.View style={[styles.inner, { transform: [{ scale }] }]}>
+        <View style={styles.row}>
+          <Text style={[styles.number, { fontSize, lineHeight: fontSize + 8 }]}>{format(minutes)}</Text>
+          <Text style={[styles.colon, { fontSize: colonSize }]}>:</Text>
+          <Text style={[styles.number, { fontSize, lineHeight: fontSize + 8 }]}>{format(secs)}</Text>
+        </View>
+      </Animated.View>
+    </View>
   );
-};
+}
 
-export default TimerDisplay;
+const styles = StyleSheet.create({
+  wrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    overflow: 'visible',
+  },
+  inner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'visible',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  number: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    letterSpacing: -3,
+    color: colors.stone[800],
+    minWidth: 64,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  colon: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    color: colors.stone[600],
+    opacity: 0.4,
+    marginHorizontal: 2,
+  },
+});
