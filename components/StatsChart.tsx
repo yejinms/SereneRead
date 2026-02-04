@@ -12,6 +12,10 @@ const chartWidth = Math.min(screenWidth - 32 - 48, 400);
 const barWidth = (chartWidth - 80) / 7;
 const barMaxHeight = 140;
 
+const GRID_GAP = 4;
+const GRID_COLUMNS = 7;
+const gridCellSize = Math.floor((screenWidth - 32 - (GRID_COLUMNS - 1) * GRID_GAP) / GRID_COLUMNS);
+
 interface StatsChartProps {
   stats: DailyStats;
   books: Book[];
@@ -73,11 +77,11 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
   const firstDay = new Date(year, month, 1).getDay();
 
   const intensityBg = (totalMins: number) => {
-    if (totalMins <= 0) return colors.stone[100];
-    if (totalMins < 10) return colors.rose[50];
-    if (totalMins < 25) return colors.rose[100];
-    if (totalMins < 45) return colors.rose[200];
-    return colors.rose[300];
+    if (totalMins <= 0) return colors.stone[200];
+    if (totalMins < 10) return colors.rose[100];
+    if (totalMins < 25) return colors.rose[200];
+    if (totalMins < 45) return colors.rose[400];
+    return colors.rose[600];
   };
 
   return (
@@ -169,9 +173,12 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
             </Pressable>
           </View>
         </View>
-        <View style={styles.grid}>
+        <View style={[styles.grid, { gap: GRID_GAP }]}>
           {Array.from({ length: firstDay }, (_, i) => (
-            <View key={`e-${i}`} style={styles.cell} />
+            <View
+              key={`e-${i}`}
+              style={[styles.cell, { width: gridCellSize, height: gridCellSize, backgroundColor: colors.stone[100] }]}
+            />
           ))}
           {Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1;
@@ -189,7 +196,7 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
                 }}
                 style={[
                   styles.cell,
-                  { backgroundColor: intensityBg(totalMins) },
+                  { width: gridCellSize, height: gridCellSize, backgroundColor: intensityBg(totalMins) },
                   isSelected && styles.cellSelected,
                 ]}
               />
@@ -313,13 +320,9 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
   },
   cell: {
-    width: '13%',
-    aspectRatio: 1,
     borderRadius: 4,
-    maxWidth: 44,
   },
   cellSelected: {
     borderWidth: 2,
