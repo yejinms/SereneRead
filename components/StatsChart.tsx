@@ -77,7 +77,7 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
   const firstDay = new Date(year, month, 1).getDay();
 
   const intensityBg = (totalMins: number) => {
-    if (totalMins <= 0) return colors.stone[200];
+    if (totalMins <= 0) return colors.rose[50];
     if (totalMins < 10) return colors.rose[100];
     if (totalMins < 25) return colors.rose[200];
     if (totalMins < 45) return colors.rose[400];
@@ -177,7 +177,7 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
           {Array.from({ length: firstDay }, (_, i) => (
             <View
               key={`e-${i}`}
-              style={[styles.cell, { width: gridCellSize, height: gridCellSize, backgroundColor: colors.stone[100] }]}
+              style={[styles.cell, { width: gridCellSize, height: gridCellSize, backgroundColor: colors.rose[50] }]}
             />
           ))}
           {Array.from({ length: daysInMonth }, (_, i) => {
