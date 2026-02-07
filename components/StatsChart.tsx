@@ -136,7 +136,13 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
         </View>
         {tooltipDay && (
           <View style={styles.tooltip}>
-            <Text style={styles.tooltipTitle}>{tooltipDay.fullDate}</Text>
+            <Text style={styles.tooltipTitle}>
+              {new Date(tooltipDay.fullDate + 'T00:00:00').toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </Text>
             {tooltipDay.details.map((d, i) => (
               <View key={i} style={styles.tooltipRow}>
                 <View style={[styles.tooltipDot, { backgroundColor: d.color }]} />
@@ -266,7 +272,7 @@ const styles = StyleSheet.create({
   tooltipTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.rose[50],
+    color: colors.stone[800],
     letterSpacing: 1,
     marginBottom: 12,
     paddingBottom: 8,
