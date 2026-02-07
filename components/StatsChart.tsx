@@ -15,6 +15,7 @@ const barMaxHeight = 140;
 const GRID_GAP = 4;
 const GRID_COLUMNS = 7;
 const gridCellSize = Math.floor((screenWidth - 32 - (GRID_COLUMNS - 1) * GRID_GAP) / GRID_COLUMNS);
+const gridTotalWidth = GRID_COLUMNS * gridCellSize + (GRID_COLUMNS - 1) * GRID_GAP;
 
 interface StatsChartProps {
   stats: DailyStats;
@@ -74,7 +75,8 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
+  // 첫 셀을 항상 해당 월 1일로: 요일 빈칸 없이 1일부터 순서대로 채움
+  const firstDay = 0;
 
   const intensityBg = (totalMins: number) => {
     if (totalMins <= 0) return colors.rose[50];
@@ -173,7 +175,7 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
             </Pressable>
           </View>
         </View>
-        <View style={[styles.grid, { gap: GRID_GAP }]}>
+        <View style={[styles.grid, { gap: GRID_GAP, width: gridTotalWidth }]}>
           {Array.from({ length: firstDay }, (_, i) => (
             <View
               key={`e-${i}`}
