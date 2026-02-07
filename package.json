@@ -5,14 +5,14 @@
   "private": true,
   "scripts": {
     "start": "expo start",
-    "ios": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios",
-    "build:ios": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios",
+    "ios": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios --device \"iPhone 16 Pro\"",
+    "build:ios": "LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 expo run:ios --device \"iPhone 16 Pro\"",
     "generate-noise": "node scripts/generate-noise.js",
     "android": "expo run:android"
   },
   "dependencies": {
-    "@expo-google-fonts/inter": "^0.4.1",
     "@expo-google-fonts/instrument-serif": "^0.4.1",
+    "@expo-google-fonts/inter": "^0.4.1",
     "@expo/vector-icons": "^14.0.4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "expo": "~52.0.0",
@@ -20,6 +20,7 @@
     "expo-blur": "~14.0.1",
     "expo-font": "~13.0.1",
     "expo-haptics": "~14.0.0",
+    "expo-linear-gradient": "~14.0.2",
     "expo-splash-screen": "~0.29.18",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",

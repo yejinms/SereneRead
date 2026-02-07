@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { colors } from '../theme';
 
 const { height: screenHeight } = Dimensions.get('window');
-const fontSize = screenHeight < 700 ? 96 : 108;
+const fontSize = screenHeight < 700 ? 112 : 128;
 const colonSize = Math.round(fontSize * 0.48);
 
 interface TimerDisplayProps {
@@ -42,7 +42,8 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingTop: 28,
+    paddingBottom: 0,
     overflow: 'visible',
   },
   inner: {
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     letterSpacing: -3,
     color: colors.stone[800],
-    minWidth: 64,
+    minWidth: 76,
     textAlign: 'center',
     includeFontPadding: false,
   },

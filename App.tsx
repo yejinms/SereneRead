@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import {
   InstrumentSerif_400Regular,
   InstrumentSerif_400Regular_Italic,
 } from '@expo-google-fonts/instrument-serif';
+import { BlurView } from 'expo-blur';
 
 import Layout from './components/Layout';
 import TimerDisplay from './components/TimerDisplay';
@@ -158,7 +160,7 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <Layout>
         <View style={[styles.wrapper, { paddingTop: headerPaddingTop }]}>
           <View style={styles.header}>
@@ -173,13 +175,18 @@ export default function App() {
                 triggerHaptic('light');
                 setShowStats(!showStats);
               }}
-              style={[styles.headerBtn, showStats && styles.headerBtnActive]}
             >
-              <Ionicons
-                name={showStats ? 'settings' : 'bar-chart'}
-                size={20}
-                color={showStats ? colors.stone[50] : colors.stone[800]}
-              />
+              <BlurView
+                intensity={50}
+                tint="light"
+                style={[styles.headerBtn, showStats && styles.headerBtnActive]}
+              >
+                <Ionicons
+                  name={showStats ? 'settings' : 'bar-chart'}
+                  size={20}
+                  color={showStats ? colors.stone[50] : colors.stone[800]}
+                />
+              </BlurView>
             </Pressable>
           </View>
 
@@ -189,6 +196,7 @@ export default function App() {
               contentContainerStyle={styles.statsContent}
               showsVerticalScrollIndicator={false}
             >
+              <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
               <View style={styles.statsHeader}>
                 <View>
                   <Text style={styles.statsLabel}>Weekly Insight</Text>
@@ -205,9 +213,10 @@ export default function App() {
                   triggerHaptic('light');
                   setShowStats(false);
                 }}
-                style={styles.backBtn}
               >
-                <Text style={styles.backBtnText}>Back to Focus</Text>
+                <BlurView intensity={80} tint="dark" style={styles.backBtn}>
+                  <Text style={styles.backBtnText}>Back to Focus</Text>
+                </BlurView>
               </Pressable>
             </ScrollView>
           ) : (
@@ -233,91 +242,105 @@ export default function App() {
                 }}
               />
 
-              <View style={styles.timerCard}>
-                <TimerDisplay
-                  secondsRemaining={secondsRemaining}
-                  isRunning={isRunning}
-                />
-                <View style={styles.asmrRow}>
-                  <Ionicons name="volume-high" size={12} color={colors.stone[400]} />
-                  {(['none', 'white', 'pink', 'brown'] as ASMRType[]).map((type) => (
-                    <Pressable
-                      key={type}
-                      onPress={() => {
-                        triggerHaptic('light');
-                        setAsmrType(type);
-                      }}
+              <View style={styles.timerSection}>
+                <View style={styles.timerCardContainer}>
+                  <BlurView intensity={30} tint="light" style={styles.timerCard}>
+                    <TimerDisplay
+                      secondsRemaining={secondsRemaining}
+                      isRunning={isRunning}
+                    />
+                    <View style={styles.asmrHeader}>
+                      <Text style={styles.asmrLabel}>Now Playing</Text>
+                    </View>
+                    <View style={styles.asmrRow}>
+                      <Ionicons name="volume-high" size={12} color={colors.stone[500]} />
+                      {(['none', 'white', 'pink', 'brown'] as ASMRType[]).map((type) => (
+                        <Pressable
+                          key={type}
+                          onPress={() => {
+                            triggerHaptic('light');
+                            setAsmrType(type);
+                          }}
+                          style={[
+                            styles.asmrChip,
+                            asmrType === type && styles.asmrChipActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.asmrChipText,
+                              asmrType === type && styles.asmrChipTextActive,
+                            ]}
+                          >
+                            {type}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </BlurView>
+                </View>
+
+                <View style={styles.controls}>
+                  <Pressable onPress={() => adjustTime(-5)}>
+                    <BlurView intensity={40} tint="light" style={styles.controlBtn}>
+                      <Ionicons name="remove" size={28} color={colors.stone[600]} />
+                    </BlurView>
+                  </Pressable>
+                  
+                  <Pressable onPress={toggleTimer} style={styles.playBtnWrap}>
+                    <View
                       style={[
-                        styles.asmrChip,
-                        asmrType === type && styles.asmrChipActive,
+                        styles.playBtnCircle,
+                        isRunning && styles.playBtnActive,
+                        {
+                          backgroundColor: isRunning ? colors.rose[100] : colors.stone[800],
+                        },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.asmrChipText,
-                          asmrType === type && styles.asmrChipTextActive,
-                        ]}
-                      >
-                        {type}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.controls}>
-                <Pressable
-                  onPress={() => adjustTime(-5)}
-                  style={styles.controlBtn}
-                >
-                  <Ionicons name="remove" size={24} color={colors.stone[400]} />
-                </Pressable>
-                <Pressable
-                  onPress={toggleTimer}
-                  style={[
-                    styles.playBtn,
-                    isRunning && styles.playBtnActive,
-                  ]}
-                >
-                  <Ionicons
-                    name={isRunning ? 'pause' : 'play'}
-                    size={54}
-                    color={isRunning ? colors.rose[500] : colors.stone[50]}
-                  />
-                </Pressable>
-                <Pressable
-                  onPress={() => adjustTime(5)}
-                  style={styles.controlBtn}
-                >
-                  <Ionicons name="add" size={24} color={colors.stone[400]} />
-                </Pressable>
-              </View>
-
-              <View style={styles.presets}>
-                {[15, 25, 45, 60].map((mins) => (
-                  <Pressable
-                    key={mins}
-                    onPress={() => {
-                      triggerHaptic('light');
-                      setIsRunning(false);
-                      setSecondsRemaining(mins * 60);
-                    }}
-                    style={styles.presetChip}
-                  >
-                    <Text style={styles.presetChipText}>{mins}m</Text>
+                      <Ionicons
+                        name={isRunning ? 'pause' : 'play'}
+                        size={62}
+                        color={isRunning ? colors.rose[500] : colors.stone[50]}
+                        style={!isRunning ? { marginLeft: 4 } : undefined}
+                      />
+                    </View>
                   </Pressable>
-                ))}
-                <View style={styles.presetDivider} />
-                <Pressable
-                  onPress={() => {
-                    triggerHaptic('heavy');
-                    setIsRunning(false);
-                    setSecondsRemaining(1500);
-                  }}
-                  style={styles.resetBtn}
-                >
-                  <Ionicons name="refresh" size={16} color={colors.stone[400]} />
-                </Pressable>
+
+                  <Pressable onPress={() => adjustTime(5)}>
+                    <BlurView intensity={40} tint="light" style={styles.controlBtn}>
+                      <Ionicons name="add" size={28} color={colors.stone[600]} />
+                    </BlurView>
+                  </Pressable>
+                </View>
+
+                <View style={styles.presetsContainer}>
+                  <BlurView intensity={20} tint="light" style={styles.presets}>
+                    {[15, 25, 45, 60].map((mins) => (
+                      <Pressable
+                        key={mins}
+                        onPress={() => {
+                          triggerHaptic('light');
+                          setIsRunning(false);
+                          setSecondsRemaining(mins * 60);
+                        }}
+                        style={styles.presetChip}
+                      >
+                        <Text style={styles.presetChipText}>{mins}m</Text>
+                      </Pressable>
+                    ))}
+                    <View style={styles.presetDivider} />
+                    <Pressable
+                      onPress={() => {
+                        triggerHaptic('heavy');
+                        setIsRunning(false);
+                        setSecondsRemaining(1500);
+                      }}
+                      style={styles.resetBtn}
+                    >
+                      <Ionicons name="refresh" size={16} color={colors.stone[500]} />
+                    </Pressable>
+                  </BlurView>
+                </View>
               </View>
             </View>
           )}
@@ -358,13 +381,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
   headerBtnActive: {
     backgroundColor: colors.stone[800],
@@ -372,11 +394,12 @@ const styles = StyleSheet.create({
   },
   statsPanel: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.4)',
     borderRadius: 40,
+    overflow: 'hidden', // for blur
+    marginTop: 16,
+    marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    minHeight: 0,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   statsContent: { padding: 20, paddingBottom: 40 },
   statsHeader: {
@@ -387,10 +410,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   statsLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 2,
-    color: colors.stone[400],
+    color: colors.rose[50],
     marginBottom: 4,
   },
   statsTitle: {
@@ -400,10 +423,10 @@ const styles = StyleSheet.create({
   },
   statsToday: { alignItems: 'flex-end' },
   statsTodayLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
-    color: colors.stone[400],
+    color: colors.rose[50],
   },
   statsTodayValue: {
     fontSize: 22,
@@ -414,8 +437,9 @@ const styles = StyleSheet.create({
     marginTop: 40,
     paddingVertical: 20,
     borderRadius: 24,
-    backgroundColor: colors.stone[800],
     alignItems: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(41, 37, 36, 0.8)', // stone 800
   },
   backBtnText: {
     fontSize: 14,
@@ -423,26 +447,54 @@ const styles = StyleSheet.create({
     color: colors.stone[50],
   },
   main: { flex: 1, width: '100%', alignItems: 'center', minHeight: 0 },
+  timerSection: {
+    flex: 1,
+    width: '100%',
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
+  timerCardContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+    borderRadius: 48,
+    overflow: 'hidden',
+  },
   timerCard: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 48,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-    padding: 20,
+    borderColor: 'rgba(255,255,255,0.4)',
+    padding: 28,
     paddingBottom: 32,
-    overflow: 'visible',
+    alignItems: 'center',
+  },
+  asmrHeader: {
+    alignSelf: 'stretch',
+    marginTop: 24,
+    marginBottom: 12,
+    paddingLeft: 4,
+    paddingRight: 16,
+  },
+  asmrLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+    color: colors.rose[50],
+    textAlign: 'left',
   },
   asmrRow: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: 'rgba(245,245,244,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 999,
-    marginTop: 24,
+    marginTop: 0,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   asmrChip: {
     paddingHorizontal: 12,
@@ -450,16 +502,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   asmrChipActive: {
-    backgroundColor: colors.stone[800],
+    backgroundColor: 'rgba(41, 37, 36, 0.1)', // Subtle active state
   },
   asmrChipText: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
-    color: colors.stone[400],
+    color: colors.rose[50],
     textTransform: 'uppercase',
   },
-  asmrChipTextActive: { color: colors.stone[50] },
+  asmrChipTextActive: { color: colors.stone[800] },
   controls: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -469,43 +521,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   controlBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.white,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderWidth: 1,
-    borderColor: colors.stone[100],
+    borderColor: 'rgba(255,255,255,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  playBtnWrap: {
+    width: 104,
+    height: 104,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playBtn: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.stone[800],
+  playBtnCircle: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.stone[800],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
   },
   playBtnActive: {
-    backgroundColor: colors.rose[50],
-    shadowColor: colors.rose[100],
+    borderColor: 'rgba(253, 164, 175, 0.4)',
+  },
+  presetsContainer: {
+    marginTop: 32,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   presets: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: 'rgba(255,255,255,0.3)',
+    overflow: 'hidden',
   },
   presetChip: {
     paddingHorizontal: 12,
@@ -513,14 +571,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   presetChipText: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.stone[400],
+    color: colors.rose[50],
   },
   presetDivider: {
     width: 1,
     height: 20,
-    backgroundColor: colors.stone[200],
+    backgroundColor: 'rgba(168, 162, 158, 0.4)', // stone 400 with opacity
     marginHorizontal: 4,
   },
   resetBtn: { padding: 8 },

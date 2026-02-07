@@ -22,7 +22,17 @@ export const colors = {
     500: '#f43f5e',
     600: '#e11d48',
   },
-  emerald: { 50: '#ecfdf5', 100: '#d1fae5', 400: '#34d399' },
-  amber: { 100: '#fef3c7' },
+  violet: { 50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe' },
+  emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399' },
+  amber: { 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24' },
+  indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8' },
+  // 배경 그라데이션용 - 밝고 따뜻한 오렌지/레드/핑크
+  pastel: {
+    cream: '#fefaf6',
+    peach: '#f5d4c8',
+    coral: '#e8b4b8',
+    apricot: '#fad4c0',
+    blush: '#f8dfe0',
+  },
   white: '#ffffff',
 };

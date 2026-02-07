@@ -95,7 +95,13 @@ export default function BookManager({
           onPress={() => onSelect(null)}
           style={[styles.chip, selectedBookId === null && styles.chipSelected]}
         >
-          <View style={[styles.dot, selectedBookId === null && styles.dotSelected]} />
+          <View
+            style={[
+              styles.dot,
+              selectedBookId === null && styles.dotSelected,
+              { backgroundColor: colors.rose[50] },
+            ]}
+          />
           <Text style={[styles.chipText, selectedBookId === null && styles.chipTextSelected]}>
             General
           </Text>
@@ -193,11 +199,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   label: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 2.5,
-    color: colors.stone[400],
-    opacity: 0.7,
+    color: colors.rose[50],
   },
   addBtn: {
     width: 28,
@@ -227,14 +232,14 @@ const styles = StyleSheet.create({
     height: 40,
     paddingHorizontal: 16,
     borderRadius: 18,
-    backgroundColor: colors.stone[50],
+    backgroundColor: 'rgba(255,255,255,0.35)',
     borderWidth: 1,
-    borderColor: colors.stone[100],
+    borderColor: 'rgba(255,255,255,0.5)',
     marginRight: 10,
   },
   chipSelected: {
-    backgroundColor: colors.white,
-    borderColor: colors.stone[200],
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderColor: 'rgba(255,255,255,0.9)',
     transform: [{ scale: 1.05 }],
     zIndex: 10,
   },

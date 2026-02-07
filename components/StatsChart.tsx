@@ -14,7 +14,9 @@ const barMaxHeight = 140;
 
 const GRID_GAP = 4;
 const GRID_COLUMNS = 7;
-const gridCellSize = Math.floor((screenWidth - 32 - (GRID_COLUMNS - 1) * GRID_GAP) / GRID_COLUMNS);
+// Layout(16*2) + statsContent(20*2) = 72px 패딩 반영
+const gridAvailableWidth = screenWidth - 72;
+const gridCellSize = Math.floor((gridAvailableWidth - (GRID_COLUMNS - 1) * GRID_GAP) / GRID_COLUMNS);
 const gridTotalWidth = GRID_COLUMNS * gridCellSize + (GRID_COLUMNS - 1) * GRID_GAP;
 
 interface StatsChartProps {
@@ -45,7 +47,7 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
       const details: { title: string; mins: number; color: string }[] = [];
       const untrackedSecs = dayData[UNTRACKED_ID] || 0;
       const untrackedMins = Number((untrackedSecs / 60).toFixed(1));
-      if (untrackedMins > 0) details.push({ title: 'General', mins: untrackedMins, color: '#d6d3d1' });
+      if (untrackedMins > 0) details.push({ title: 'General', mins: untrackedMins, color: colors.rose[50] });
       books.forEach((b) => {
         const secs = dayData[b.id] || 0;
         const mins = Number((secs / 60).toFixed(1));
@@ -188,7 +190,6 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
             const dayData = stats[dateStr] || {};
             const totalSecs = Object.values(dayData).reduce((s, v) => s + (v as number), 0);
             const totalMins = Math.round(totalSecs / 60);
-            const isSelected = selectedDay?.day === day;
             return (
               <Pressable
                 key={day}
@@ -199,7 +200,6 @@ export default function StatsChart({ stats, books }: StatsChartProps) {
                 style={[
                   styles.cell,
                   { width: gridCellSize, height: gridCellSize, backgroundColor: intensityBg(totalMins) },
-                  isSelected && styles.cellSelected,
                 ]}
               />
             );
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 10,
     fontWeight: '600',
-    color: colors.stone[400],
+    color: colors.rose[50],
   },
   tooltip: {
     position: 'absolute',
@@ -264,9 +264,9 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   tooltipTitle: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.stone[400],
+    color: colors.rose[50],
     letterSpacing: 1,
     marginBottom: 12,
     paddingBottom: 8,
@@ -280,9 +280,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tooltipDot: { width: 6, height: 6, borderRadius: 3 },
-  tooltipName: { flex: 1, fontSize: 11, fontWeight: '500', color: colors.stone[600], maxWidth: 90 },
-  tooltipMins: { fontSize: 11, fontWeight: '700', color: colors.stone[900] },
-  tooltipEmpty: { fontSize: 11, color: colors.stone[400], fontStyle: 'italic' },
+  tooltipName: { flex: 1, fontSize: 13, fontWeight: '500', color: colors.stone[600], maxWidth: 90 },
+  tooltipMins: { fontSize: 13, fontWeight: '700', color: colors.stone[900] },
+  tooltipEmpty: { fontSize: 13, color: colors.rose[50], fontStyle: 'italic' },
   grassSection: {
     marginTop: 24,
     paddingTop: 24,
@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   grassLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: '700',
     letterSpacing: 2.5,
-    color: colors.stone[400],
+    color: colors.rose[50],
   },
-  grassSelected: { fontSize: 11, fontWeight: '600', color: colors.stone[600], marginTop: 4 },
+  grassSelected: { fontSize: 13, fontWeight: '600', color: colors.rose[50], marginTop: 4 },
   monthNav: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navBtn: {
     width: 36,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthTitle: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.stone[700],
     minWidth: 80,
@@ -325,9 +325,5 @@ const styles = StyleSheet.create({
   },
   cell: {
     borderRadius: 4,
-  },
-  cellSelected: {
-    borderWidth: 2,
-    borderColor: colors.stone[800],
   },
 });
